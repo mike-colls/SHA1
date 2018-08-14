@@ -8,10 +8,10 @@ class sha1 {
 private:
 
     void add_byte_dont_count_bits(uint8_t x){
-        buf[i++] = x;
+        buf[pos++] = x;
 
-        if (i >= sizeof(buf)){
-            i = 0;
+        if (pos >= sizeof(buf)){
+            pos = 0;
             process_block(buf);
         }
     }
@@ -150,10 +150,10 @@ public:
 
     uint32_t state[5];
     uint8_t buf[64];
-    uint32_t i;
+    uint32_t pos;
     uint64_t n_bits;
 
-    sha1(const char *text = NULL): i(0), n_bits(0){
+    sha1(const char *text = NULL): pos(0), n_bits(0){
         state[0] = 0x67452301;
         state[1] = 0xEFCDAB89;
         state[2] = 0x98BADCFE;
@@ -172,13 +172,13 @@ public:
         return add(*(uint8_t*)&c);
     }
 
-    sha1& add(const void *data, uint32_t n){
+    sha1& add(const void *data, size_t n){
         if (!data) return *this;
 
         const uint8_t *ptr = (const uint8_t*)data;
 
         // fill up block if not full
-        for (; n && i % sizeof(buf); n--) add(*ptr++);
+        for (; n && pos % sizeof(buf); n--) add(*ptr++);
 
         // process full blocks
         for (; n >= sizeof(buf); n -= sizeof(buf)){
@@ -200,8 +200,8 @@ public:
     sha1& finalize(){
         // hashed text ends with 0x80, some padding 0x00 and the length in bits
         add_byte_dont_count_bits(0x80);
-        while (i % 64 != 56) add_byte_dont_count_bits(0x00);
-        for (int j = 7; j >= 0; j--) add_byte_dont_count_bits(n_bits >> j * 8);
+        while (pos % 64 != 56) add_byte_dont_count_bits(0x00);
+        for (int j = 7; j >= 0; j--) add_byte_dont_count_bits(static_cast<uint8_t>(n_bits >> j * 8));
 
         return *this;
     }
