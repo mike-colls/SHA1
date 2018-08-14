@@ -150,17 +150,14 @@ private:
 
 public:
 
-    uint32_t state[5];
+    uint32_t state[5] { 0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0 };
     uint8_t buf[64];
-    uint32_t pos;
-    uint64_t n_bits;
+    uint32_t pos{0};
+    uint64_t n_bits{0};
 
-    sha1(const char *text = NULL): pos(0), n_bits(0){
-        state[0] = 0x67452301;
-        state[1] = 0xEFCDAB89;
-        state[2] = 0x98BADCFE;
-        state[3] = 0x10325476;
-        state[4] = 0xC3D2E1F0;
+    sha1() = default;
+
+    sha1(const char *text ){
         add(text);
     }
 
@@ -197,6 +194,11 @@ public:
 
     sha1& add(const char *text){
         return add(text, strlen(text));
+    }
+
+    sha1& add( const std::string& text )
+    {
+        return add(text.data(), text.size());
     }
 
     sha1& add( std::string_view text )

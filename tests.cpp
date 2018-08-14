@@ -50,6 +50,20 @@ void test(const char *expected, const char *text){
     }
 }
 
+void test_default_constructor(const char *expected, const char *text)
+{
+    char hex[SHA1_HEX_SIZE];
+
+    sha1 sha;
+    sha.add(text).finalize().print_hex(hex);
+
+    if (strcmp(expected, hex) != 0){
+        printf("hash of       : %s\n", text);
+        printf("wrong hash    : %s\n", hex);
+        printf("expected  hash: %s\n", expected);
+    }
+}
+
 int main(){
     example();
 
@@ -82,6 +96,8 @@ int main(){
         printf("wrong hash    : %s\n", hex);
         printf("expected  hash: %s\n", expected);
     }
+
+    test_default_constructor("7ed10e4a589c87f9e6a85c22e4b0c38ecf5f5059", "01234567890");
 
     test("da39a3ee5e6b4b0d3255bfef95601890afd80709", "");
     test("b6589fc6ab0dc82cf12099d1c2d40ab994e8410c", "0");
@@ -288,3 +304,4 @@ int main(){
 
     return 0;
 }
+
