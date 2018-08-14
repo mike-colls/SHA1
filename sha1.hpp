@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <string.h>
+#include <string_view>
 
 #define SHA1_HEX_SIZE (40 + 1)
 #define SHA1_BASE64_SIZE (28 + 1)
@@ -196,6 +197,11 @@ public:
 
     sha1& add(const char *text){
         return add(text, strlen(text));
+    }
+
+    sha1& add( std::string_view text )
+    {
+        return add(text.data(), text.size());
     }
 
     sha1& finalize(){
