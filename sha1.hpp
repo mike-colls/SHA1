@@ -1,15 +1,54 @@
 #pragma once
-#include <stdint.h>
-#include <string.h>
+#include <cstdint>
+#include <string>
 #include <string_view>
 
-#define SHA1_HEX_SIZE (40 + 1)
-#define SHA1_BASE64_SIZE (28 + 1)
+struct Sha1 {
+public:
+    uint32_t state[5] { 0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0 };
 
-class sha1 {
+    Sha1() = default;
+
+    std::string to_string() const {
+        std::string str;
+        const char *alphabet = "0123456789abcdef";
+        for (int i = 0; i < 5; i++){
+            for (int j = 7; j >= 0; j--){
+                str += alphabet[(state[i] >> j * 4) & 0xf];
+            }
+        }
+        return str;
+    }
+
+    bool operator==(const Sha1& rhs) const
+    {
+        return
+            state[0] == rhs.state[0] &&
+            state[1] == rhs.state[1] &&
+            state[2] == rhs.state[2] &&
+            state[3] == rhs.state[3] &&
+            state[4] == rhs.state[4];
+    }
+
+    bool operator!=(const Sha1& rhs) const
+    {
+        return
+            state[0] != rhs.state[0] ||
+            state[1] != rhs.state[1] ||
+            state[2] != rhs.state[2] ||
+            state[3] != rhs.state[3] ||
+            state[4] != rhs.state[4];
+    }
+};
+
+class Sha1_calculator {
 private:
+    uint32_t state[5] { 0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0 };
+    uint8_t buf[64];
+    uint32_t pos{0};
+    uint64_t n_bits{0};
 
-    void add_byte_dont_count_bits(uint8_t x){
+    void add_byte_dont_count_bits(const uint8_t x){
         buf[pos++] = x;
 
         if (pos >= sizeof(buf)){
@@ -149,29 +188,23 @@ private:
     }
 
 public:
+    Sha1_calculator() = default;
 
-    uint32_t state[5] { 0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0 };
-    uint8_t buf[64];
-    uint32_t pos{0};
-    uint64_t n_bits{0};
-
-    sha1() = default;
-
-    sha1(const char *text ){
+    Sha1_calculator(std::string_view text){
         add(text);
     }
 
-    sha1& add(uint8_t x){
+    Sha1_calculator& add(uint8_t x){
         add_byte_dont_count_bits(x);
         n_bits += 8;
         return *this;
     }
 
-    sha1& add(char c){
-        return add(*(uint8_t*)&c);
+    Sha1_calculator& add(char c){
+        return add(static_cast<uint8_t>(c));
     }
 
-    sha1& add(const void *data, size_t n){
+    Sha1_calculator& add(const void *data, size_t n){
         if (!data) return *this;
 
         const uint8_t *ptr = (const uint8_t*)data;
@@ -192,72 +225,17 @@ public:
         return *this;
     }
 
-    sha1& add(const char *text){
-        return add(text, strlen(text));
-    }
-
-    sha1& add( const std::string& text )
+    Sha1_calculator& add( std::string_view text )
     {
         return add(text.data(), text.size());
     }
 
-    sha1& add( std::string_view text )
-    {
-        return add(text.data(), text.size());
-    }
-
-    sha1& finalize(){
+    Sha1 finalize(){
         // hashed text ends with 0x80, some padding 0x00 and the length in bits
         add_byte_dont_count_bits(0x80);
         while (pos % 64 != 56) add_byte_dont_count_bits(0x00);
         for (int j = 7; j >= 0; j--) add_byte_dont_count_bits(static_cast<uint8_t>(n_bits >> j * 8));
 
-        return *this;
-    }
-
-    const sha1& print_hex(
-        char *hex,
-        bool zero_terminate = true,
-        const char *alphabet = "0123456789abcdef"
-    ) const {
-        // print hex
-        int k = 0;
-        for (int i = 0; i < 5; i++){
-            for (int j = 7; j >= 0; j--){
-                hex[k++] = alphabet[(state[i] >> j * 4) & 0xf];
-            }
-        }
-        if (zero_terminate) hex[k] = '\0';
-        return *this;
-    }
-
-    const sha1& print_base64(char *base64, bool zero_terminate = true) const {
-        static const uint8_t *table = (const uint8_t*)
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            "abcdefghijklmnopqrstuvwxyz"
-            "0123456789"
-            "+/";
-
-        uint32_t triples[7] = {
-            ((state[0] & 0xffffff00) >> 1*8),
-            ((state[0] & 0x000000ff) << 2*8) | ((state[1] & 0xffff0000) >> 2*8),
-            ((state[1] & 0x0000ffff) << 1*8) | ((state[2] & 0xff000000) >> 3*8),
-            ((state[2] & 0x00ffffff) << 0*8),
-            ((state[3] & 0xffffff00) >> 1*8),
-            ((state[3] & 0x000000ff) << 2*8) | ((state[4] & 0xffff0000) >> 2*8),
-            ((state[4] & 0x0000ffff) << 1*8),
-        };
-
-        for (int i = 0; i < 7; i++){
-            uint32_t x = triples[i];
-            base64[i*4 + 0] = table[(x >> 3*6) % 64];
-            base64[i*4 + 1] = table[(x >> 2*6) % 64];
-            base64[i*4 + 2] = table[(x >> 1*6) % 64];
-            base64[i*4 + 3] = table[(x >> 0*6) % 64];
-        }
-
-        base64[SHA1_BASE64_SIZE - 2] = '=';
-        if (zero_terminate) base64[SHA1_BASE64_SIZE - 1] = '\0';
-        return *this;
+        return Sha1{ state[0], state[1], state[2], state[3], state[4] };
     }
 };

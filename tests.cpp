@@ -1,5 +1,5 @@
 #include "sha1.hpp"
-
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
@@ -7,11 +7,8 @@
 void example(){
     const char *text = "quick brown fox jumps over the lazy dog";
 
-    char hex[SHA1_HEX_SIZE];
-    char base64[SHA1_BASE64_SIZE];
-
     // constructor can be empty or take a const char*
-    sha1("The ")
+    const auto sha1 = Sha1_calculator("The ")
         // can be chained
         // can add single chars
         .add(text[0])
@@ -21,45 +18,41 @@ void example(){
         .add(&text[5])
         // finalize must be called, otherwise the hash is not valid
         // after that, no more bytes should be added
-        .finalize()
+        .finalize();
+
         // print the hash in hexadecimal, 0-terminated
-        .print_hex(hex)
-        // print the hash in base64, 0-terminated
-        .print_base64(base64);
+        const auto str = sha1.to_string();
+
+    Sha1 expected{0x2fd4e1c6, 0x7a2d28fc, 0xed849ee1, 0xbb76e739, 0x1b93eb12};
+    if( expected != sha1)
+    {
+        printf("Not equal\n");
+    }
 
     printf("SHA1(The quick brown fox jumps over the lazy dog)\n");
     printf("\n");
-    printf("hexadecimal\n");
-    printf("calculated: %s\n", hex);
+    printf("calculated: %s\n", str.c_str());
     printf("expected  : 2fd4e1c67a2d28fced849ee1bb76e7391b93eb12\n");
-    printf("\n");
-    printf("base64 encoded\n");
-    printf("calculated: %s\n", base64);
-    printf("expected  : L9ThxnotKPzthJ7hu3bnORuT6xI=\n");
 }
 
 void test(const char *expected, const char *text){
-    char hex[SHA1_HEX_SIZE];
+    const auto str = Sha1_calculator(text).finalize().to_string();
 
-    sha1(text).finalize().print_hex(hex);
-
-    if (strcmp(expected, hex) != 0){
+    if (strcmp(expected, str.c_str()) != 0){
         printf("hash of       : %s\n", text);
-        printf("wrong hash    : %s\n", hex);
+        printf("wrong hash    : %s\n", str.c_str());
         printf("expected  hash: %s\n", expected);
     }
 }
 
 void test_default_constructor(const char *expected, const char *text)
 {
-    char hex[SHA1_HEX_SIZE];
+    Sha1_calculator sha;
+    const auto str = sha.add(text).finalize().to_string();
 
-    sha1 sha;
-    sha.add(text).finalize().print_hex(hex);
-
-    if (strcmp(expected, hex) != 0){
+    if (strcmp(expected, str.c_str()) != 0){
         printf("hash of       : %s\n", text);
-        printf("wrong hash    : %s\n", hex);
+        printf("wrong hash    : %s\n", str.c_str());
         printf("expected  hash: %s\n", expected);
     }
 }
@@ -74,7 +67,7 @@ int main(){
     for (size_t i = 0; i < buf.size(); i++) buf[i] = 'a' + (i%26);
     buf.back() = '\0';
 
-    sha1 s;
+    Sha1_calculator sha1_calculator;
 
     // chop up buf and feed it bite by bite
     size_t offset = 0;
@@ -83,17 +76,16 @@ int main(){
         if (remaining == 0) break;
         size_t n = rand() % 128;
         if (n > remaining) n = remaining;
-        s.add(&buf[offset], n);
+        sha1_calculator.add(&buf[offset], n);
         offset += n;
     }
 
-    s.finalize();
-    char hex[SHA1_HEX_SIZE];
-    s.print_hex(hex);
+    const auto sha1 = sha1_calculator.finalize();
+    const auto str = sha1.to_string();
 
-    if (strcmp(expected, hex) != 0){
+    if (strcmp(expected, str.c_str()) != 0){
         printf("hash of a to z one million times\n");
-        printf("wrong hash    : %s\n", hex);
+        printf("wrong hash    : %s\n", str.c_str());
         printf("expected  hash: %s\n", expected);
     }
 
