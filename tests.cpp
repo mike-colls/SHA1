@@ -1,4 +1,4 @@
-#include "sha1.hpp"
+#include "sha1_calculator.hpp"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
