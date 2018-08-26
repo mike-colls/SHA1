@@ -153,7 +153,7 @@ private:
 public:
     Sha1_calculator() = default;
 
-    Sha1_calculator(std::string_view text){
+    explicit Sha1_calculator(std::string_view text){
         add(text);
     }
 
