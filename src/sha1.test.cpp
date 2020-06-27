@@ -1,4 +1,4 @@
-#include "sha1_calculator.hpp"
+#include "sha1/sha1_calculator.hpp"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,7 +23,7 @@ void example(){
         // print the hash in hexadecimal, 0-terminated
         const auto str = sha1.to_string();
 
-    Sha1 expected{0x2fd4e1c6, 0x7a2d28fc, 0xed849ee1, 0xbb76e739, 0x1b93eb12};
+    Sha1 expected(0x2fd4e1c6, 0x7a2d28fc, 0xed849ee1, 0xbb76e739, 0x1b93eb12);
     if( expected != sha1)
     {
         printf("Not equal\n");

@@ -9,6 +9,15 @@ public:
 
     Sha1() = default;
 
+    Sha1( uint32_t state0, uint32_t state1, uint32_t state2, uint32_t state3, uint32_t state4 )
+    {
+        state[0] = state0;
+        state[1] = state1;
+        state[2] = state2;
+        state[3] = state3;
+        state[4] = state4;
+    }
+
     std::string to_string() const {
         std::string str;
         const char *alphabet = "0123456789abcdef";
